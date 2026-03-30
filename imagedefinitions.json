@@ -1,0 +1,6 @@
+[
+  {
+    "name": "app-container",
+    "imageUri": "354493396671.dkr.ecr.ap-northeast-3.amazonaws.com/midas-repository2:latest"
+  }
+]
