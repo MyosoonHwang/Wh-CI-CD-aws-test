@@ -4,9 +4,24 @@ phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
+      # 실제 ECR 로그인을 수행합니다.
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/ecs-app-repo
   build:
     commands:
-      - docker build -t app .
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      # 로컬 이름 'app' 대신 ECR 주소로 직접 빌드합니다.
+      - docker build -t $REPOSITORY_URI:latest .
   post_build:
     commands:
-      - echo Build complete
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      # 빌드된 이미지를 ECR 저장소로 업로드합니다.
+      - docker push $REPOSITORY_URI:latest
+      - echo Writing image definitions file...
+      # ECS가 읽을 지시서(imagedefinitions.json)를 자동 생성합니다.
+      - printf '[{"name":"app-container","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
+artifacts:
+    # 생성된 지시서를 다음 단계(Deploy)로 넘겨줍니다.
+    files: imagedefinitions.json
